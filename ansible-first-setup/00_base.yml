@@ -1,0 +1,17 @@
+- hosts: all
+  become: yes
+  tasks:
+    - name: 00_base.yml
+      ping:
+
+    - name: update apt cachea
+      apt: update_cache=yes
+
+    - name: install build deps
+      apt: name={{item}} state=present
+      with_items:
+        - git
+        - build-essential
+        - supervisor
+
+    - service: name=supervisor state=running

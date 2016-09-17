@@ -1,0 +1,40 @@
+- hosts: all
+  become: yes
+  become_user: ubuntu
+
+  vars:
+    isucon_home: /home/ubuntu
+    webapp_path: "{{isucon_home}}/webapp/golang"
+
+  environment:
+    GOROOT: /usr/local/go
+    GOPATH: "{{webapp_path}}"
+
+  tasks:
+    - name: 02_webapp.yml
+      ping:
+
+    - name: gin
+      shell: PATH=/usr/local/go/bin:$GOPATH/bin:$PATH go get github.com/gin-gonic/gin
+      args: 
+        chdir: "{{webapp_path}}"
+
+    - name: copy webapp source
+      copy:
+        src: ../webapp/golang/
+        dest: "{{webapp_path}}"
+
+    - name: build webapp
+      shell: PATH=/usr/local/go/bin:$GOPATH/bin:$PATH go build -i -o app
+      args:
+        chdir: "{{webapp_path}}"
+
+- hosts: all
+  become: yes
+
+  tasks:
+    - copy:
+        src: ../etc/supervisor/conf.d/webapp.conf
+        dest: /etc/supervisor/conf.d/
+
+    - service: name=supervisor state=restarted

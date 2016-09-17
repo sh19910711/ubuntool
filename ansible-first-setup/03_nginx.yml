@@ -1,0 +1,67 @@
+- hosts: all
+  become: yes
+
+  vars:
+    nginx_version: "1.10.1"
+    ngx_devel_kit_version: "0.3.0"
+    ngx_mruby_version: "1.18.4"
+    nginx_source_dir: "/opt/src/nginx-{{nginx_version}}"
+
+  environment:
+    LANG: C
+    LC_ALL: C
+    LC_MESSAGES: C
+
+  tasks:
+    - name: mkdir /var/log/nginx
+      file: path=/var/log/nginx state=directory owner=www-data
+
+    - name: get build deps
+      apt: name={{item}} state=present
+      with_items:
+        - libpcre3-dev
+        - zlib1g-dev
+
+    - name: download ngx_devel_kit
+      get_url:
+        url: https://github.com/simpl/ngx_devel_kit/archive/v{{ngx_devel_kit_version}}.tar.gz
+        dest: /opt/src
+
+    - name: download ngx_mruby
+      get_url:
+        url: https://github.com/matsumoto-r/ngx_mruby/archive/v{{ngx_mruby_version}}.tar.gz
+        dest: /opt/src
+
+    - name: download nginx
+      get_url:
+        url: https://nginx.org/download/nginx-{{nginx_version}}.tar.gz
+        dest: /opt/src
+
+    - name: extract nginx
+      unarchive:
+        src: /opt/src/nginx-{{nginx_version}}.tar.gz
+        dest: /opt/src
+        copy: no
+        creates: "{{nginx_source_dir}}/configure"
+
+    - name: configure
+      shell: >
+        ./configure --prefix=/usr/local
+        chdir="{{nginx_source_dir}}"
+
+    - name: make
+      shell: make chdir="{{nginx_source_dir}}"
+
+    - name: make install
+      shell: make install chdir="{{nginx_source_dir}}"
+
+    - name: copy config
+      copy:
+        src: ../etc/nginx/
+        dest: /etc/nginx
+
+    - copy:
+        src: ../etc/supervisor/conf.d/nginx.conf
+        dest: /etc/supervisor/conf.d/
+
+    - service: name=supervisor state=restarted

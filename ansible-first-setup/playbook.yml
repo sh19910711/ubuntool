@@ -1,0 +1,4 @@
+- include: 00_base.yml
+- include: 01_golang.yml
+- include: 02_webapp.yml
+- include: 03_nginx.yml

@@ -1,0 +1,34 @@
+- hosts: all
+  become: yes
+
+  vars:
+    go_version: "1.7.1"
+    go_checksum: 43ad621c9b014cde8db17393dc108378d37bc853aa351a6c74bf6432c1bbd182
+    go_tarball: "go{{go_version}}.linux-amd64.tar.gz"
+
+  environment:
+    LANG: C
+    LC_ALL: C
+    LC_MESSAGES: C
+
+  tasks:
+    - name: install go-{{go_version}}
+      ping: 
+
+    - name: mkdir
+      file:
+        path: /opt/src
+        state: directory
+
+    - name: download tar ball
+      get_url:
+        url: "https://storage.googleapis.com/golang/go{{go_version}}.linux-amd64.tar.gz"
+        dest: /opt/src/{{go_tarball}}
+        checksum: "sha256:{{go_checksum}}"
+
+    - name: extract
+      unarchive:
+        src: /opt/src/{{go_tarball}}
+        dest: /usr/local
+        copy: no
+        creates: /usr/local/go/bin/go
